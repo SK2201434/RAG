@@ -1,0 +1,24 @@
+# LangChain
+langchain
+langchain-community
+langchain-openai
+langchain-text-splitters
+
+# Embeddings
+sentence-transformers
+
+# Vector Store
+faiss-cpu
+
+# PDF Processing
+pymupdf
+docling
+
+# Environment variables
+python-dotenv
+
+# OpenAI
+openai
+
+#langchain-huggingface
+langchain-huggingface

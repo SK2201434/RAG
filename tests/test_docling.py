@@ -1,24 +1,23 @@
+print("TEST FILE STARTED")
+
 from app.ingestion.docling_parser import convert_pdf
+
+print("IMPORT SUCCESSFUL")
 
 
 document = convert_pdf(
     "data/company-policy.pdf"
 )
 
+print("DOCLING CONVERSION COMPLETED")
+
 print("\n===================================")
-print("DOCLING STRUCTURE - TARGETED TEST")
+print("DOCLING DOCUMENT STRUCTURE")
 print("===================================")
 
-keywords = [
-    "Company Demographics",
-    "Advisory Board",
-    "Charu Raheja",
-    "Ravi Raheja",
-    "John Roberts",
-    "Shelley Rogers",
-]
+count = 0
 
-for index, (item, level) in enumerate(document.iterate_items()):
+for item, level in document.iterate_items():
 
     text = getattr(item, "text", "")
 
@@ -27,17 +26,22 @@ for index, (item, level) in enumerate(document.iterate_items()):
 
     text = text.strip()
 
-    if any(keyword.lower() in text.lower() for keyword in keywords):
+    print("\n-----------------------------------")
+    print(f"ITEM {count}")
+    print("-----------------------------------")
 
-        print("\n-----------------------------------")
-        print(f"ITEM {index}")
-        print("-----------------------------------")
+    print("Level:", level)
+    print("Type:", type(item).__name__)
 
-        print("Level:", level)
-        print("Type:", type(item).__name__)
+    if hasattr(item, "label"):
+        print("Label:", item.label)
 
-        if hasattr(item, "label"):
-            print("Label:", item.label)
+    print("Text:")
+    print(text[:500])
 
-        print("Text:")
-        print(text[:1000])
+    count += 1
+
+    if count >= 20:
+        break
+
+print("\nTOTAL ITEMS DISPLAYED:", count)

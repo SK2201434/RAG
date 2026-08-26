@@ -1,12 +1,14 @@
 from app.vectorstore.faiss_store import load_vector_store
 
-vector_store = load_vector_store("data/faiss_vectorstore")
+vector_store = load_vector_store(
+    "data/faiss_vectorstore/docling_hybrid_index"
+)
 
 print("Vector store loaded successfully!")
 
-question = "who is Shelley Rogers?"
+question = "What are the duties of independent directors regarding confidential information?"
 
-results = vector_store.similarity_search_with_score(question,k=5)
+results = vector_store.similarity_search_with_score(question,k=9)
 
 print("\nRetrieved documents:")
 
