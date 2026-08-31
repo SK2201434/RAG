@@ -55,7 +55,7 @@ def index_document(
 
     print("Indexing completed successfully!")
 
-    return vector_store
+    return langchain_documents,vector_store
     """convert, chunk, embed and index a pdf
     """
     print("1. converting PDF...")

@@ -22,3 +22,6 @@ openai
 
 #langchain-huggingface
 langchain-huggingface
+
+# BM25
+rank-bm25
