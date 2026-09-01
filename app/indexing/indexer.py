@@ -1,22 +1,40 @@
 from pathlib import Path
+from typing import List, Tuple
 
 from langchain_core.documents import Document
 
 from app.ingestion.docling_parser import convert_pdf
 from app.chunking.docling_chunker import hybrid_chunks
-from app.vectorstore.faiss_store import (create_faiss_vectorstore,save_vectorstore)
+from app.vectorstore.faiss_store import (
+    create_faiss_vectorstore,
+    save_vectorstore,
+)
+
 
 def index_document(
     pdf_path: str,
     vector_store_path: str,
-):
+) -> Tuple[List[Document], object]:
     """
-    Convert, chunk, embed and index a PDF.
+    Convert, chunk, embed, and index a PDF.
+
+    Returns:
+        A tuple containing:
+            - List of LangChain Document objects
+            - FAISS vector store
     """
+
+    # ---------------------------------------------------------
+    # 1. Convert PDF using Docling
+    # ---------------------------------------------------------
 
     print("1. Converting PDF...")
 
     document = convert_pdf(pdf_path)
+
+    # ---------------------------------------------------------
+    # 2. Create context-aware chunks
+    # ---------------------------------------------------------
 
     print("2. Creating chunks...")
 
@@ -24,14 +42,23 @@ def index_document(
 
     print(f"   Total chunks: {len(chunks)}")
 
-    langchain_documents = []
+    # ---------------------------------------------------------
+    # 3. Convert chunks into LangChain Documents
+    # ---------------------------------------------------------
 
-    for chunk in chunks:
+    document_id = Path(pdf_path).stem
 
-        metadata = {}
+    langchain_documents: List[Document] = []
 
-        # Preserve the Docling metadata object for now.
-        metadata["docling_meta"] = chunk.meta
+    for index, chunk in enumerate(chunks):
+
+        chunk_id = f"{document_id}:chunk_{index:06d}"
+
+        metadata = {
+            "document_id": document_id,
+            "chunk_id": chunk_id,
+            "docling_meta": chunk.meta,
+        }
 
         langchain_document = Document(
             page_content=chunk.text,
@@ -40,11 +67,19 @@ def index_document(
 
         langchain_documents.append(langchain_document)
 
+    # ---------------------------------------------------------
+    # 4. Create embeddings and FAISS index
+    # ---------------------------------------------------------
+
     print("3. Creating embeddings and FAISS index...")
 
     vector_store = create_faiss_vectorstore(
         langchain_documents
     )
+
+    # ---------------------------------------------------------
+    # 5. Save FAISS index
+    # ---------------------------------------------------------
 
     print("4. Saving FAISS index...")
 
@@ -55,7 +90,8 @@ def index_document(
 
     print("Indexing completed successfully!")
 
-    return langchain_documents,vector_store
-    """convert, chunk, embed and index a pdf
-    """
-    print("1. converting PDF...")
+    # ---------------------------------------------------------
+    # 6. Return BOTH documents and vector store
+    # ---------------------------------------------------------
+
+    return langchain_documents, vector_store

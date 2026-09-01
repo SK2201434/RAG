@@ -55,7 +55,7 @@ class HybridRetriever:
                 start=1,
             ):
 
-                document_id = document.page_content
+                document_id = document.metadata["chunk_id"]
 
                 documents_by_id[document_id] = document
 
