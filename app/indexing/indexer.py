@@ -18,33 +18,20 @@ def index_document(
     """
     Convert, chunk, embed, and index a PDF.
 
-    Returns:
-        A tuple containing:
-            - List of LangChain Document objects
-            - FAISS vector store
+    Docling structural information such as headings and page
+    numbers is extracted into normal LangChain metadata so that
+    downstream retrieval and reranking components can use it.
     """
-
-    # ---------------------------------------------------------
-    # 1. Convert PDF using Docling
-    # ---------------------------------------------------------
 
     print("1. Converting PDF...")
 
     document = convert_pdf(pdf_path)
-
-    # ---------------------------------------------------------
-    # 2. Create context-aware chunks
-    # ---------------------------------------------------------
 
     print("2. Creating chunks...")
 
     chunks = hybrid_chunks(document)
 
     print(f"   Total chunks: {len(chunks)}")
-
-    # ---------------------------------------------------------
-    # 3. Convert chunks into LangChain Documents
-    # ---------------------------------------------------------
 
     document_id = Path(pdf_path).stem
 
@@ -54,32 +41,73 @@ def index_document(
 
         chunk_id = f"{document_id}:chunk_{index:06d}"
 
+        # -----------------------------------------------------
+        # Extract Docling structural metadata
+        # -----------------------------------------------------
+
+        docling_meta = chunk.meta
+
+        # Heading
+        headings = getattr(docling_meta, "headings", None)
+
+        if headings:
+            heading = headings[0]
+        else:
+            heading = None
+
+        # Page numbers
+        page_numbers = []
+
+        for item in getattr(docling_meta, "doc_items", []):
+
+            for provenance in getattr(item, "prov", []):
+
+                page_number = getattr(
+                    provenance,
+                    "page_no",
+                    None,
+                )
+
+                if (
+                    page_number is not None
+                    and page_number not in page_numbers
+                ):
+                    page_numbers.append(page_number)
+
+        # -----------------------------------------------------
+        # Build LangChain metadata
+        # -----------------------------------------------------
+
         metadata = {
             "document_id": document_id,
             "chunk_id": chunk_id,
-            "docling_meta": chunk.meta,
+
+            # Structural metadata
+            "heading": heading,
+            "page_numbers": page_numbers,
+
+            # Keep original Docling metadata
+            "docling_meta": docling_meta,
         }
+
+        # -----------------------------------------------------
+        # Create LangChain Document
+        # -----------------------------------------------------
 
         langchain_document = Document(
             page_content=chunk.text,
             metadata=metadata,
         )
 
-        langchain_documents.append(langchain_document)
-
-    # ---------------------------------------------------------
-    # 4. Create embeddings and FAISS index
-    # ---------------------------------------------------------
+        langchain_documents.append(
+            langchain_document
+        )
 
     print("3. Creating embeddings and FAISS index...")
 
     vector_store = create_faiss_vectorstore(
         langchain_documents
     )
-
-    # ---------------------------------------------------------
-    # 5. Save FAISS index
-    # ---------------------------------------------------------
 
     print("4. Saving FAISS index...")
 
@@ -89,9 +117,5 @@ def index_document(
     )
 
     print("Indexing completed successfully!")
-
-    # ---------------------------------------------------------
-    # 6. Return BOTH documents and vector store
-    # ---------------------------------------------------------
 
     return langchain_documents, vector_store

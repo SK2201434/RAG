@@ -25,3 +25,9 @@ langchain-huggingface
 
 # BM25
 rank-bm25
+
+#sentence transformers
+sentence-transformers
+
+#langchain ollama
+langchain-ollama
